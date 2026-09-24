@@ -1,0 +1,21 @@
+{
+  "program": "passport.hidden-limit.bp5.ristretto.32x2.v1",
+  "measured_at": "2026-09-24T01:32:28.301Z",
+  "cpu": "AMD Ryzen 9 9950X3D 16-Core Processor",
+  "architecture": "x64",
+  "platform": "linux",
+  "build": "Rust release, Docker Compose, HTTP round trip included",
+  "samples": 10,
+  "warmup": 1,
+  "proof_bytes": 672,
+  "proof_hex_bytes": 1344,
+  "generation": {
+    "median_ms": 7.68,
+    "p95_ms": 8.72
+  },
+  "verification": {
+    "median_ms": 2.93,
+    "p95_ms": 3.5
+  },
+  "interpretation": "Local measurements only; no production latency or security claim."
+}

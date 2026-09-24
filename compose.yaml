@@ -1,0 +1,186 @@
+name: passport
+
+x-node: &node
+  image: passport-node:local
+  build:
+    context: .
+    dockerfile: docker/node.Dockerfile
+  user: '${LOCAL_UID:-1000}:${LOCAL_GID:-1000}'
+  init: true
+  restart: unless-stopped
+  read_only: true
+  tmpfs: [/tmp]
+  security_opt: [no-new-privileges:true]
+  develop:
+    watch:
+      - { path: ./sdk, action: rebuild }
+      - { path: ./apps, action: rebuild }
+      - { path: ./scripts, action: rebuild }
+      - { path: ./package.json, action: rebuild }
+      - { path: ./package-lock.json, action: rebuild }
+      - { path: ./tsconfig.json, action: rebuild }
+
+x-go: &go
+  image: passport-go:local
+  build:
+    context: .
+    dockerfile: docker/go.Dockerfile
+  user: '${LOCAL_UID:-1000}:${LOCAL_GID:-1000}'
+  restart: unless-stopped
+  read_only: true
+  security_opt: [no-new-privileges:true]
+  develop:
+    watch:
+      - { path: ./pkg, action: rebuild }
+      - { path: ./internal, action: rebuild }
+      - { path: ./cmd, action: rebuild }
+      - { path: ./go.mod, action: rebuild }
+      - { path: ./go.sum, action: rebuild }
+  healthcheck:
+    test: [CMD, curl, --fail, --silent, http://localhost:8080/healthz]
+    interval: 3s
+    timeout: 3s
+    retries: 30
+
+x-worker: &worker
+  image: passport-worker:local
+  build:
+    context: .
+    dockerfile: docker/worker.Dockerfile
+  restart: unless-stopped
+  read_only: true
+  security_opt: [no-new-privileges:true]
+  develop:
+    watch:
+      - path: ./workers/policy-proof
+        action: rebuild
+        ignore: [target/]
+  healthcheck:
+    test: [CMD, curl, --fail, --silent, http://localhost:8090/healthz]
+    interval: 3s
+    timeout: 3s
+    retries: 30
+
+services:
+  db:
+    image: postgres:17-bookworm
+    environment:
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Run ./bin/dev first}
+    volumes:
+      - database:/var/lib/postgresql/data
+      - ./.local/db/001-users.sql:/docker-entrypoint-initdb.d/001-users.sql:ro
+    healthcheck:
+      test: [CMD-SHELL, 'pg_isready -U postgres']
+      interval: 3s
+      timeout: 3s
+      retries: 30
+    restart: unless-stopped
+
+  registry:
+    <<: *go
+    ports: ['127.0.0.1:${PASSPORT_PORT:-8080}:8080']
+    environment:
+      MODE: registry
+      DATABASE_URL: postgres://passport:${PASSPORT_DB_PASSWORD}@db:5432/passport?sslmode=disable
+    volumes:
+      - ./.local/registry:/registry:ro
+      - ./web:/app/web:ro
+      - ./api:/app/api:ro
+    depends_on:
+      db: { condition: service_healthy }
+
+  acme-worker:
+    <<: *worker
+    environment: { MODE: acme, ENABLE_ZK: '${ENABLE_ZK:-1}' }
+
+  globex-proof:
+    <<: *worker
+    environment: { MODE: verify, ENABLE_ZK: '${ENABLE_ZK:-1}' }
+
+  verifier:
+    <<: *go
+    ports: ['127.0.0.1:${VERIFIER_PORT:-8083}:8080']
+    environment: { MODE: verifier, ENABLE_ZK: '${ENABLE_ZK:-1}' }
+    volumes: ['./.local/public:/public:ro']
+    depends_on:
+      registry: { condition: service_healthy }
+      globex-proof: { condition: service_healthy }
+
+  authority:
+    <<: *node
+    command: [node, dist/apps/authority/server.js]
+    ports: ['127.0.0.1:${AUTHORITY_PORT:-8082}:8082']
+    environment: { ENABLE_ZK: '${ENABLE_ZK:-1}' }
+    volumes:
+      - ./.local/acme/authority:/authority:ro
+      - ./.local/public:/public:ro
+    depends_on:
+      registry: { condition: service_healthy }
+      acme-worker: { condition: service_healthy }
+    healthcheck:
+      test:
+        [
+          CMD,
+          node,
+          -e,
+          "fetch('http://localhost:8082/healthz').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
+        ]
+      interval: 3s
+      timeout: 3s
+      retries: 30
+
+  globex:
+    <<: *node
+    ports: ['127.0.0.1:${GLOBEX_PORT:-8081}:8081']
+    environment:
+      DATABASE_URL: postgres://globex:${GLOBEX_DB_PASSWORD}@db:5432/globex?sslmode=disable
+    volumes: ['./.local/globex:/globex:ro']
+    depends_on:
+      db: { condition: service_healthy }
+      verifier: { condition: service_healthy }
+    healthcheck:
+      test:
+        [
+          CMD,
+          node,
+          -e,
+          "fetch('http://localhost:8081/healthz').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
+        ]
+      interval: 3s
+      timeout: 3s
+      retries: 30
+
+  toolbox:
+    <<: *node
+    profiles: [tools]
+    restart: 'no'
+    read_only: false
+    environment:
+      LOCAL_DIR: /local
+      REGISTRY_URL: http://registry:8080
+      AUTHORITY_URL: http://authority:8082
+      GLOBEX_URL: http://globex:8081
+      VERIFIER_URL: http://verifier:8080
+      WORKER_URL: http://acme-worker:8090
+      PROOF_URL: http://globex-proof:8090
+      ENABLE_ZK: '${ENABLE_ZK:-1}'
+      PASSPORT_PORT: '${PASSPORT_PORT:-8080}'
+      GLOBEX_PORT: '${GLOBEX_PORT:-8081}'
+      AUTHORITY_PORT: '${AUTHORITY_PORT:-8082}'
+    volumes: ['./.local:/local']
+    command: [node, dist/scripts/demo.js]
+
+  agent:
+    <<: *node
+    profiles: [tools]
+    restart: 'no'
+    environment:
+      PROFILE_FILE: /agent/profile.json
+      REGISTRY_URL: http://registry:8080
+      AUTHORITY_URL: http://authority:8082
+      GLOBEX_URL: http://globex:8081
+    command: [node, dist/apps/agent/mcp.js]
+    # bin/passport mounts exactly one runtime profile at /agent, read-only.
+
+volumes:
+  database:

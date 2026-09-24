@@ -1,0 +1,26 @@
+#!/usr/bin/env bash
+set -euo pipefail
+cd "$(dirname "$0")/.."
+command="${1:-help}"
+if [ "$#" -gt 0 ]; then shift; fi
+case "$command" in
+  demo) exec docker compose run --rm -T --no-deps toolbox node dist/scripts/demo.js "$@" ;;
+  benchmark) exec docker compose run --rm -T --no-deps toolbox node dist/scripts/benchmark.js "$@" ;;
+  bootstrap) exec docker compose run --rm -T --no-deps toolbox node dist/scripts/bootstrap.js "$@" ;;
+  mcp)
+    agent_name="${1:-codex-local}"
+    if [[ ! "$agent_name" =~ ^[a-zA-Z0-9][a-zA-Z0-9._-]{0,80}$ ]]; then echo 'Invalid agent name' >&2; exit 1; fi
+    agent_dir="$PWD/.local/agents/$agent_name"
+    test -f "$agent_dir/profile.json" || { echo "Enroll first: ./bin/passport enroll $agent_name" >&2; exit 1; }
+    exec docker compose run --rm -T --no-deps --volume "$agent_dir:/agent:ro" agent ;;
+  connect)
+    agent_name="${1:-codex-local}"
+    if [[ ! "$agent_name" =~ ^[a-zA-Z0-9][a-zA-Z0-9._-]{0,80}$ ]]; then echo 'Invalid agent name' >&2; exit 1; fi
+    test -f ".local/agents/$agent_name/profile.json" || { echo "Enroll first: ./bin/passport enroll $agent_name" >&2; exit 1; }
+    printf 'Run this command to add the agent tools to Codex:\n\n'
+    printf 'codex mcp add passport-%s -- %q mcp %q\n' "$agent_name" "$PWD/bin/passport" "$agent_name"
+    printf '\nThen restart Codex and use /mcp to check the connection.\n' ;;
+  enroll|renew|identity|verify|purchase|revoke|policy)
+    exec docker compose run --rm -T --no-deps toolbox node dist/apps/agent/cli.js "$command" "$@" ;;
+  *) echo 'Usage: ./bin/passport {demo|benchmark|enroll NAME|renew NAME|identity NAME|verify NAME [AMOUNT] [--proof]|purchase NAME [AMOUNT] [--proof]|connect NAME|mcp NAME|revoke KIND ID|policy LIMIT_MINOR_UNITS}' ;;
+esac

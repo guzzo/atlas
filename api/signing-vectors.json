@@ -1,0 +1,23 @@
+{
+  "description": "Public test material only. RFC 8032 seed; RFC 8785 canonicalization; never a development or production identity.",
+  "public_key": "MCowBQYDK2VwAyEA11qYAYKxCrfVS_7TyWQHOg7hcvPapiMlrwIaaPcHURo",
+  "canonical_payload": "{\"amount_minor_units\":1200,\"body\":{\"a\":\"café 🛂\",\"z\":\"line\\nquote\\\"\"},\"currency\":\"USD\",\"issued_at\":1800000000,\"issuer_org\":\"acme\"}",
+  "canonical_signing_input": "{\"key_id\":\"rfc8032-test-only\",\"kind\":\"test_vector\",\"payload\":{\"amount_minor_units\":1200,\"body\":{\"a\":\"café 🛂\",\"z\":\"line\\nquote\\\"\"},\"currency\":\"USD\",\"issued_at\":1800000000,\"issuer_org\":\"acme\"},\"profile\":\"passport.v0.ed25519-jcs\"}",
+  "payload_digest": "cd02c22d33c8081a2ca3b2973514e9575b1acc42f801f7150be715da76ac44e0",
+  "document": {
+    "profile": "passport.v0.ed25519-jcs",
+    "kind": "test_vector",
+    "key_id": "rfc8032-test-only",
+    "payload": {
+      "issuer_org": "acme",
+      "amount_minor_units": 1200,
+      "currency": "USD",
+      "body": {
+        "z": "line\nquote\"",
+        "a": "café 🛂"
+      },
+      "issued_at": 1800000000
+    },
+    "signature": "dMdUExvmsuGRQ3KounTkaWnlZe7FTBk8WkpEv8GU8jaW5H9HpII3biz8uvi7_xWBSiZsUK5NvhErJsIh6WoyBA"
+  }
+}

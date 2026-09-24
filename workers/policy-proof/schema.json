@@ -1,0 +1,28 @@
+{
+  "": {
+    "entityTypes": {
+      "Agent": { "shape": { "type": "Record", "attributes": {} } },
+      "Resource": { "shape": { "type": "Record", "attributes": {} } }
+    },
+    "actions": {
+      "purchase": {
+        "appliesTo": {
+          "principalTypes": ["Agent"],
+          "resourceTypes": ["Resource"],
+          "context": {
+            "type": "Record",
+            "attributes": {
+              "audience": { "type": "String" },
+              "recipient": { "type": "String" },
+              "currency": { "type": "String" },
+              "asset": { "type": "String" },
+              "network": { "type": "String" },
+              "amount": { "type": "Long" },
+              "limit": { "type": "Long" }
+            }
+          }
+        }
+      }
+    }
+  }
+}

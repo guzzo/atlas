@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+set -euo pipefail
+cd "$(dirname "$0")/.."
+for program in docker node; do
+  command -v "$program" >/dev/null || { echo "Missing required development tool: $program" >&2; exit 1; }
+done
+docker compose version >/dev/null
+docker info >/dev/null
+node scripts/configure.mjs
+docker compose up --build -d --wait
+docker compose run --rm -T --no-deps toolbox node dist/scripts/bootstrap.js
+echo "Passport is ready. Dashboard: http://127.0.0.1:8080 (or PASSPORT_PORT in .env)."
+echo "Run ./bin/passport demo, or ./bin/passport identity codex-local."

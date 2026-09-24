@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Passport · Agent trust</title>
+    <link rel="stylesheet" href="/style.css" />
+    <script src="/app.js" defer></script>
+  </head>
+  <body>
+    <aside>
+      <a class="brand" href="/" aria-label="Passport home"
+        ><span class="mark">P<span>↗</span></span
+        >passport<span class="version"> / 0.1</span></a
+      >
+      <div class="workspace">
+        <span class="workspace-icon">A</span>
+        <div>Local workspace<small>Acme × Globex</small></div>
+        <span class="dot"></span>
+      </div>
+      <nav>
+        <a href="#overview" class="selected"><span>◈</span>Overview</a
+        ><a href="#agents"><span>◎</span>Agent identities</a
+        ><a href="#activity"><span>≋</span>Verification receipts</a
+        ><a href="/api/openapi.json" target="_blank" rel="noopener"><span>⌘</span>API contract ↗</a>
+      </nav>
+      <div class="aside-bottom">
+        <span class="dot"></span> Local development<small>Private authority. Portable proof.</small>
+      </div>
+    </aside>
+    <main id="overview">
+      <header>
+        <div class="breadcrumb">WORKSPACE <span>/</span> TRUST OVERVIEW</div>
+        <div class="live" id="health"><span class="dot"></span>Connecting</div>
+      </header>
+      <section class="intro">
+        <div>
+          <div class="eyebrow">THE AGENT TRUST LAYER</div>
+          <h1>Identity. Authority.<br /><span>Evidence you can verify.</span></h1>
+          <p>
+            Know who controls an agent, what it may do, and why this exact request is authorized.
+          </p>
+        </div>
+        <div class="protocol-card">
+          <div class="protocol-label"><span class="dot"></span> PASSPORT V0</div>
+          <div class="orbit">
+            <span class="orbit-node n1">A</span><span class="orbit-node n2">P</span
+            ><span class="orbit-node n3">G</span>
+            <div class="orbit-line"></div>
+          </div>
+          <p>Acme <span>→</span> Passport <span>→</span> Globex</p>
+          <small>Two organizations. One verifiable request.</small>
+        </div>
+      </section>
+      <section class="stats">
+        <article>
+          <span>Organizations</span><strong id="org-count">—</strong
+          ><small>Independent trust roots</small>
+        </article>
+        <article>
+          <span>Active agents</span><strong id="agent-count">—</strong
+          ><small>Bound to runtime keys</small>
+        </article>
+        <article>
+          <span>Verified executions</span><strong id="execution-count">—</strong
+          ><small>In the latest 50 receipts</small>
+        </article>
+        <article>
+          <span>State freshness</span><strong>5<span>s</span></strong
+          ><small>Live checks · fail closed</small>
+        </article>
+      </section>
+      <section class="connect">
+        <div>
+          <span class="section-number">01 / CONNECT</span>
+          <h2>Your next agent starts here.</h2>
+          <p>
+            The local Codex agent is ready to prove its identity.<br />Get its MCP connection
+            command, then ask it to verify a request.
+          </p>
+          <div class="pill">Ed25519 runtime keys</div>
+          <div class="pill">No shared agent token</div>
+        </div>
+        <div class="terminal">
+          <div class="terminal-bar">
+            <span>TERMINAL</span><button id="copy" type="button">Copy command ⧉</button>
+          </div>
+          <code><span class="prompt">$</span> ./bin/passport connect codex-local</code>
+          <div class="terminal-hint">
+            In Codex: “Verify my Passport identity, then verify a 1200-cent purchase with a private
+            proof.”
+          </div>
+        </div>
+      </section>
+      <section id="agents" class="panel">
+        <div class="section-heading">
+          <div>
+            <span class="section-number">02 / IDENTITIES</span>
+            <h2>Agents with authority</h2>
+          </div>
+          <span class="quiet">Runtime keys expire after 24 hours</span>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>AGENT</th>
+                <th>ORGANIZATION</th>
+                <th>DELEGATION</th>
+                <th>STATUS</th>
+              </tr>
+            </thead>
+            <tbody id="agents-list">
+              <tr>
+                <td colspan="4" class="empty">Waiting for the registry…</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+      <section id="activity" class="panel">
+        <div class="section-heading">
+          <div>
+            <span class="section-number">03 / EVIDENCE</span>
+            <h2>Every decision leaves a receipt.</h2>
+          </div>
+          <button id="refresh" class="refresh" type="button">↻ Refresh</button>
+        </div>
+        <p class="section-description">
+          Authorization and execution are recorded separately. Expand a receipt to inspect its
+          signed evidence and verification trace.
+        </p>
+        <div class="filters" role="group" aria-label="Receipt filters">
+          <button data-filter="all" class="active">All decisions</button
+          ><button data-filter="execution">Executions</button
+          ><button data-filter="authorization">Authorizations</button
+          ><button data-filter="denial">Denials</button>
+        </div>
+        <div id="receipts-list" aria-live="polite">
+          <p class="empty">
+            No receipts yet. Run <code>./bin/passport demo</code> to exercise the trust chain.
+          </p>
+        </div>
+      </section>
+      <footer>
+        <span>Passport · Private authority proof of concept</span
+        ><span>Simulated resources. No payments. Experimental proof profile.</span>
+      </footer>
+    </main>
+  </body>
+</html>

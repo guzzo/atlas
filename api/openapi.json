@@ -1,0 +1,3271 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Passport local proof of concept",
+    "version": "0.1.0",
+    "description": "Experimental Ed25519/JCS agent authority protocol. Acme issues capabilities; Globex makes the final decision. See docs/protocol.md for signing rules and docs/threat-model.md for trusted state and outage semantics."
+  },
+  "servers": [
+    {
+      "url": "http://127.0.0.1:8080",
+      "description": "Registry"
+    },
+    {
+      "url": "http://127.0.0.1:8081",
+      "description": "Globex"
+    },
+    {
+      "url": "http://127.0.0.1:8082",
+      "description": "Acme authority"
+    },
+    {
+      "url": "http://127.0.0.1:8083",
+      "description": "Independent Go verifier"
+    }
+  ],
+  "paths": {
+    "/healthz": {
+      "get": {
+        "operationId": "health",
+        "summary": "Service health",
+        "servers": [
+          {
+            "url": "http://127.0.0.1:8080"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Health"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Malformed input",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Administrator credential required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Verification denied; may include a signed denial receipt",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Immutable ID conflict or concurrent update",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Dependency unavailable; fail closed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v0/organizations": {
+      "post": {
+        "operationId": "registerOrganization",
+        "summary": "registerOrganization",
+        "servers": [
+          {
+            "url": "http://127.0.0.1:8080"
+          }
+        ],
+        "security": [
+          {
+            "AdminBearer": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SignedOrganization"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Created"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Malformed input",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Administrator credential required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Verification denied; may include a signed denial receipt",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Immutable ID conflict or concurrent update",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Dependency unavailable; fail closed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v0/agents": {
+      "post": {
+        "operationId": "registerAgent",
+        "summary": "registerAgent",
+        "servers": [
+          {
+            "url": "http://127.0.0.1:8080"
+          }
+        ],
+        "security": [
+          {
+            "AdminBearer": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SignedAgent"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Created"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Malformed input",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Administrator credential required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Verification denied; may include a signed denial receipt",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Immutable ID conflict or concurrent update",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Dependency unavailable; fail closed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v0/agents/{id}/keys": {
+      "post": {
+        "operationId": "bindRuntimeKey",
+        "summary": "bindRuntimeKey",
+        "servers": [
+          {
+            "url": "http://127.0.0.1:8080"
+          }
+        ],
+        "security": [
+          {
+            "AdminBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[a-zA-Z0-9][a-zA-Z0-9:._-]{0,127}$"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SignedRuntimeKey"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Created"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Malformed input",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Administrator credential required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Verification denied; may include a signed denial receipt",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Immutable ID conflict or concurrent update",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Dependency unavailable; fail closed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v0/delegations": {
+      "post": {
+        "operationId": "registerDelegation",
+        "summary": "registerDelegation",
+        "servers": [
+          {
+            "url": "http://127.0.0.1:8080"
+          }
+        ],
+        "security": [
+          {
+            "AdminBearer": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SignedDelegation"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Created"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Malformed input",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Administrator credential required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Verification denied; may include a signed denial receipt",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Immutable ID conflict or concurrent update",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Dependency unavailable; fail closed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v0/policy-keys": {
+      "post": {
+        "operationId": "delegatePolicySigner",
+        "summary": "delegatePolicySigner",
+        "servers": [
+          {
+            "url": "http://127.0.0.1:8080"
+          }
+        ],
+        "security": [
+          {
+            "AdminBearer": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SignedPolicyKey"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Created"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Malformed input",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Administrator credential required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Verification denied; may include a signed denial receipt",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Immutable ID conflict or concurrent update",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Dependency unavailable; fail closed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v0/policies": {
+      "post": {
+        "operationId": "activatePolicy",
+        "summary": "activatePolicy",
+        "servers": [
+          {
+            "url": "http://127.0.0.1:8080"
+          }
+        ],
+        "security": [
+          {
+            "AdminBearer": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SignedPolicy"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Created"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Malformed input",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Administrator credential required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Verification denied; may include a signed denial receipt",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Immutable ID conflict or concurrent update",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Dependency unavailable; fail closed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v0/revocations": {
+      "post": {
+        "operationId": "revoke",
+        "summary": "revoke",
+        "servers": [
+          {
+            "url": "http://127.0.0.1:8080"
+          }
+        ],
+        "security": [
+          {
+            "AdminBearer": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SignedRevocation"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Created"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Malformed input",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Administrator credential required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Verification denied; may include a signed denial receipt",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Immutable ID conflict or concurrent update",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Dependency unavailable; fail closed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v0/organizations/{id}/rotations": {
+      "post": {
+        "operationId": "rotateRoot",
+        "summary": "rotateRoot",
+        "servers": [
+          {
+            "url": "http://127.0.0.1:8080"
+          }
+        ],
+        "security": [
+          {
+            "AdminBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[a-zA-Z0-9][a-zA-Z0-9:._-]{0,127}$"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SignedRotation"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Created"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Malformed input",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Administrator credential required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Verification denied; may include a signed denial receipt",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Immutable ID conflict or concurrent update",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Dependency unavailable; fail closed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v0/receipts": {
+      "post": {
+        "operationId": "recordAuthorizationReceipt",
+        "summary": "recordAuthorizationReceipt",
+        "servers": [
+          {
+            "url": "http://127.0.0.1:8080"
+          }
+        ],
+        "security": [
+          {
+            "AdminBearer": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SignedReceipt"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Created"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Malformed input",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Administrator credential required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Verification denied; may include a signed denial receipt",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Immutable ID conflict or concurrent update",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Dependency unavailable; fail closed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "operationId": "receipts",
+        "summary": "Recent public authorization receipts (Globex serves execution/denial receipts at the same path on port 8081)",
+        "servers": [
+          {
+            "url": "http://127.0.0.1:8080"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/SignedReceipt"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Malformed input",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Administrator credential required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Verification denied; may include a signed denial receipt",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Immutable ID conflict or concurrent update",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Dependency unavailable; fail closed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v0/organizations/{id}/trust": {
+      "get": {
+        "operationId": "getTrust",
+        "summary": "Fresh signed public state. Verifiers must supply a random challenge and enforce its five-second lifetime.",
+        "servers": [
+          {
+            "url": "http://127.0.0.1:8080"
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[a-zA-Z0-9][a-zA-Z0-9:._-]{0,127}$"
+            }
+          },
+          {
+            "name": "challenge",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[a-f0-9]{64}$"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SignedTrustBundle"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Malformed input",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Administrator credential required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Verification denied; may include a signed denial receipt",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Immutable ID conflict or concurrent update",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Dependency unavailable; fail closed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v0/overview": {
+      "get": {
+        "operationId": "overview",
+        "summary": "Public local registry overview",
+        "servers": [
+          {
+            "url": "http://127.0.0.1:8080"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Overview"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Malformed input",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Administrator credential required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Verification denied; may include a signed denial receipt",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Immutable ID conflict or concurrent update",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Dependency unavailable; fail closed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v0/events": {
+      "get": {
+        "operationId": "events",
+        "summary": "Transactional outbox cursor feed",
+        "servers": [
+          {
+            "url": "http://127.0.0.1:8080"
+          }
+        ],
+        "security": [
+          {
+            "AdminBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "org_id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[a-zA-Z0-9][a-zA-Z0-9:._-]{0,127}$"
+            }
+          },
+          {
+            "name": "after",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 0
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Event"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Malformed input",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Administrator credential required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Verification denied; may include a signed denial receipt",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Immutable ID conflict or concurrent update",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Dependency unavailable; fail closed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v0/challenges": {
+      "post": {
+        "operationId": "challenge",
+        "summary": "Create a Globex single-use challenge",
+        "servers": [
+          {
+            "url": "http://127.0.0.1:8081"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Empty"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Challenge"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Malformed input",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Administrator credential required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Verification denied; may include a signed denial receipt",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Immutable ID conflict or concurrent update",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Dependency unavailable; fail closed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v0/capabilities": {
+      "post": {
+        "operationId": "authorize",
+        "summary": "Acme evaluates Cedar and signs an exact-request capability; runtime proof is required",
+        "servers": [
+          {
+            "url": "http://127.0.0.1:8082"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AuthorizationInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthorizationResult"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Malformed input",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Administrator credential required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Verification denied; may include a signed denial receipt",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Immutable ID conflict or concurrent update",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Dependency unavailable; fail closed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v0/identity": {
+      "post": {
+        "operationId": "identity",
+        "summary": "Acme verifies runtime identity without issuing authority",
+        "servers": [
+          {
+            "url": "http://127.0.0.1:8082"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AuthorizationInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Identity"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Malformed input",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Administrator credential required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Verification denied; may include a signed denial receipt",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Immutable ID conflict or concurrent update",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Dependency unavailable; fail closed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v0/verify": {
+      "post": {
+        "operationId": "verify",
+        "summary": "Dry-run verification. Globex applies its own rules. The Go verifier on port 8083 verifies evidence only. Neither consumes a nonce.",
+        "servers": [
+          {
+            "url": "http://127.0.0.1:8081"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Evidence"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Verification"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Malformed input",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Administrator credential required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Verification denied; may include a signed denial receipt",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Immutable ID conflict or concurrent update",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Dependency unavailable; fail closed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v0/purchases": {
+      "post": {
+        "operationId": "purchase",
+        "summary": "Atomically consume challenge and execute one simulated purchase",
+        "servers": [
+          {
+            "url": "http://127.0.0.1:8081"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Evidence"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PurchaseResult"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Malformed input",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Administrator credential required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Verification denied; may include a signed denial receipt",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Immutable ID conflict or concurrent update",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Dependency unavailable; fail closed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "AdminBearer": {
+        "type": "http",
+        "scheme": "bearer",
+        "description": "Random per-organization local administrator credential; organization creation uses a separate bootstrap credential. Signed mutations are also required."
+      }
+    },
+    "schemas": {
+      "Error": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "code"
+        ],
+        "properties": {
+          "code": {
+            "type": "string",
+            "enum": [
+              "invalid_request",
+              "invalid_signature",
+              "expired",
+              "revoked",
+              "replay",
+              "policy_mismatch",
+              "untrusted_issuer",
+              "denied",
+              "request_mismatch",
+              "invalid_proof",
+              "invalid_nonce",
+              "stale_state",
+              "unavailable",
+              "unauthorized",
+              "conflict",
+              "not_found",
+              "feature_disabled"
+            ]
+          }
+        }
+      },
+      "Health": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "status"
+        ],
+        "properties": {
+          "status": {
+            "type": "string"
+          }
+        }
+      },
+      "Created": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[a-zA-Z0-9][a-zA-Z0-9:._-]{0,127}$"
+          }
+        }
+      },
+      "Organization": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "name",
+          "root_key_id",
+          "public_key",
+          "created_at"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[a-zA-Z0-9][a-zA-Z0-9:._-]{0,127}$"
+          },
+          "name": {
+            "type": "string"
+          },
+          "root_key_id": {
+            "type": "string",
+            "pattern": "^[a-zA-Z0-9][a-zA-Z0-9:._-]{0,127}$"
+          },
+          "public_key": {
+            "type": "string"
+          },
+          "created_at": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 9007199254740991
+          }
+        }
+      },
+      "Agent": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "org_id",
+          "name",
+          "created_at"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[a-zA-Z0-9][a-zA-Z0-9:._-]{0,127}$"
+          },
+          "org_id": {
+            "type": "string",
+            "pattern": "^[a-zA-Z0-9][a-zA-Z0-9:._-]{0,127}$"
+          },
+          "name": {
+            "type": "string"
+          },
+          "created_at": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 9007199254740991
+          }
+        }
+      },
+      "RuntimeKey": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "org_id",
+          "agent_id",
+          "public_key",
+          "delegation_id",
+          "not_before",
+          "expires_at"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[a-zA-Z0-9][a-zA-Z0-9:._-]{0,127}$"
+          },
+          "org_id": {
+            "type": "string",
+            "pattern": "^[a-zA-Z0-9][a-zA-Z0-9:._-]{0,127}$"
+          },
+          "agent_id": {
+            "type": "string",
+            "pattern": "^[a-zA-Z0-9][a-zA-Z0-9:._-]{0,127}$"
+          },
+          "public_key": {
+            "type": "string"
+          },
+          "delegation_id": {
+            "type": "string",
+            "pattern": "^[a-zA-Z0-9][a-zA-Z0-9:._-]{0,127}$"
+          },
+          "not_before": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 9007199254740991
+          },
+          "expires_at": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 9007199254740991
+          }
+        }
+      },
+      "Delegation": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "org_id",
+          "agent_id",
+          "runtime_key_id",
+          "actions",
+          "resources",
+          "audiences",
+          "not_before",
+          "expires_at"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[a-zA-Z0-9][a-zA-Z0-9:._-]{0,127}$"
+          },
+          "org_id": {
+            "type": "string",
+            "pattern": "^[a-zA-Z0-9][a-zA-Z0-9:._-]{0,127}$"
+          },
+          "agent_id": {
+            "type": "string",
+            "pattern": "^[a-zA-Z0-9][a-zA-Z0-9:._-]{0,127}$"
+          },
+          "runtime_key_id": {
+            "type": "string",
+            "pattern": "^[a-zA-Z0-9][a-zA-Z0-9:._-]{0,127}$"
+          },
+          "actions": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "pattern": "^[a-zA-Z0-9][a-zA-Z0-9:._-]{0,127}$"
+            },
+            "minItems": 1,
+            "maxItems": 32
+          },
+          "resources": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "pattern": "^[a-zA-Z0-9][a-zA-Z0-9:._-]{0,127}$"
+            },
+            "minItems": 1,
+            "maxItems": 32
+          },
+          "audiences": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "pattern": "^[a-zA-Z0-9][a-zA-Z0-9:._-]{0,127}$"
+            },
+            "minItems": 1,
+            "maxItems": 32
+          },
+          "not_before": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 9007199254740991
+          },
+          "expires_at": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 9007199254740991
+          }
+        }
+      },
+      "PolicyKey": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "org_id",
+          "public_key",
+          "actions",
+          "resources",
+          "audiences",
+          "max_ttl",
+          "not_before",
+          "expires_at"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[a-zA-Z0-9][a-zA-Z0-9:._-]{0,127}$"
+          },
+          "org_id": {
+            "type": "string",
+            "pattern": "^[a-zA-Z0-9][a-zA-Z0-9:._-]{0,127}$"
+          },
+          "public_key": {
+            "type": "string"
+          },
+          "actions": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "pattern": "^[a-zA-Z0-9][a-zA-Z0-9:._-]{0,127}$"
+            },
+            "minItems": 1,
+            "maxItems": 32
+          },
+          "resources": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "pattern": "^[a-zA-Z0-9][a-zA-Z0-9:._-]{0,127}$"
+            },
+            "minItems": 1,
+            "maxItems": 32
+          },
+          "audiences": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "pattern": "^[a-zA-Z0-9][a-zA-Z0-9:._-]{0,127}$"
+            },
+            "minItems": 1,
+            "maxItems": 32
+          },
+          "max_ttl": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 60
+          },
+          "not_before": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 9007199254740991
+          },
+          "expires_at": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 9007199254740991
+          }
+        }
+      },
+      "Policy": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "org_id",
+          "version",
+          "predecessor",
+          "commitment",
+          "predicate",
+          "currency",
+          "asset",
+          "network",
+          "not_before",
+          "expires_at"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[a-zA-Z0-9][a-zA-Z0-9:._-]{0,127}$"
+          },
+          "org_id": {
+            "type": "string",
+            "pattern": "^[a-zA-Z0-9][a-zA-Z0-9:._-]{0,127}$"
+          },
+          "version": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "predecessor": {
+            "type": "string"
+          },
+          "commitment": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          },
+          "predicate": {
+            "type": "string",
+            "const": "passport.hidden-limit.bp5.ristretto.32x2.v1"
+          },
+          "currency": {
+            "type": "string",
+            "const": "USD"
+          },
+          "asset": {
+            "type": "string",
+            "const": "iso4217:USD"
+          },
+          "network": {
+            "type": "string",
+            "const": "simulation"
+          },
+          "not_before": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 9007199254740991
+          },
+          "expires_at": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 9007199254740991
+          }
+        }
+      },
+      "Request": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "request_id",
+          "issuer_org",
+          "agent_id",
+          "runtime_key_id",
+          "delegation_id",
+          "action",
+          "resource",
+          "audience",
+          "recipient",
+          "amount_minor_units",
+          "currency",
+          "asset",
+          "network",
+          "method",
+          "path",
+          "body",
+          "nonce",
+          "issued_at",
+          "expires_at",
+          "want_proof"
+        ],
+        "properties": {
+          "request_id": {
+            "type": "string",
+            "pattern": "^[a-zA-Z0-9][a-zA-Z0-9:._-]{0,127}$"
+          },
+          "issuer_org": {
+            "type": "string",
+            "pattern": "^[a-zA-Z0-9][a-zA-Z0-9:._-]{0,127}$"
+          },
+          "agent_id": {
+            "type": "string",
+            "pattern": "^[a-zA-Z0-9][a-zA-Z0-9:._-]{0,127}$"
+          },
+          "runtime_key_id": {
+            "type": "string",
+            "pattern": "^[a-zA-Z0-9][a-zA-Z0-9:._-]{0,127}$"
+          },
+          "delegation_id": {
+            "type": "string",
+            "pattern": "^[a-zA-Z0-9][a-zA-Z0-9:._-]{0,127}$"
+          },
+          "action": {
+            "type": "string",
+            "pattern": "^[a-zA-Z0-9][a-zA-Z0-9:._-]{0,127}$"
+          },
+          "resource": {
+            "type": "string",
+            "pattern": "^[a-zA-Z0-9][a-zA-Z0-9:._-]{0,127}$"
+          },
+          "audience": {
+            "type": "string",
+            "pattern": "^[a-zA-Z0-9][a-zA-Z0-9:._-]{0,127}$"
+          },
+          "recipient": {
+            "type": "string",
+            "pattern": "^[a-zA-Z0-9][a-zA-Z0-9:._-]{0,127}$"
+          },
+          "amount_minor_units": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 4294967295
+          },
+          "currency": {
+            "type": "string",
+            "const": "USD"
+          },
+          "asset": {
+            "type": "string",
+            "const": "iso4217:USD"
+          },
+          "network": {
+            "type": "string",
+            "const": "simulation"
+          },
+          "method": {
+            "type": "string",
+            "const": "POST"
+          },
+          "path": {
+            "type": "string",
+            "const": "/v0/purchases"
+          },
+          "body": {
+            "type": "object",
+            "additionalProperties": true
+          },
+          "nonce": {
+            "type": "string",
+            "pattern": "^[a-zA-Z0-9][a-zA-Z0-9:._-]{0,127}$",
+            "minLength": 32
+          },
+          "issued_at": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 9007199254740991
+          },
+          "expires_at": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 9007199254740991
+          },
+          "want_proof": {
+            "type": "boolean"
+          }
+        }
+      },
+      "Capability": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "capability_id",
+          "issuer_org",
+          "agent_id",
+          "runtime_key_id",
+          "delegation_id",
+          "action",
+          "resource",
+          "audience",
+          "recipient",
+          "amount_minor_units",
+          "currency",
+          "asset",
+          "network",
+          "request_digest",
+          "nonce",
+          "issued_at",
+          "expires_at",
+          "policy_version",
+          "policy_commitment",
+          "proof_program"
+        ],
+        "properties": {
+          "capability_id": {
+            "type": "string",
+            "pattern": "^[a-zA-Z0-9][a-zA-Z0-9:._-]{0,127}$"
+          },
+          "issuer_org": {
+            "type": "string",
+            "pattern": "^[a-zA-Z0-9][a-zA-Z0-9:._-]{0,127}$"
+          },
+          "agent_id": {
+            "type": "string",
+            "pattern": "^[a-zA-Z0-9][a-zA-Z0-9:._-]{0,127}$"
+          },
+          "runtime_key_id": {
+            "type": "string",
+            "pattern": "^[a-zA-Z0-9][a-zA-Z0-9:._-]{0,127}$"
+          },
+          "delegation_id": {
+            "type": "string",
+            "pattern": "^[a-zA-Z0-9][a-zA-Z0-9:._-]{0,127}$"
+          },
+          "action": {
+            "type": "string",
+            "pattern": "^[a-zA-Z0-9][a-zA-Z0-9:._-]{0,127}$"
+          },
+          "resource": {
+            "type": "string",
+            "pattern": "^[a-zA-Z0-9][a-zA-Z0-9:._-]{0,127}$"
+          },
+          "audience": {
+            "type": "string",
+            "pattern": "^[a-zA-Z0-9][a-zA-Z0-9:._-]{0,127}$"
+          },
+          "recipient": {
+            "type": "string",
+            "pattern": "^[a-zA-Z0-9][a-zA-Z0-9:._-]{0,127}$"
+          },
+          "amount_minor_units": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 4294967295
+          },
+          "currency": {
+            "type": "string",
+            "const": "USD"
+          },
+          "asset": {
+            "type": "string",
+            "const": "iso4217:USD"
+          },
+          "network": {
+            "type": "string",
+            "const": "simulation"
+          },
+          "request_digest": {
+            "type": "string"
+          },
+          "nonce": {
+            "type": "string",
+            "pattern": "^[a-zA-Z0-9][a-zA-Z0-9:._-]{0,127}$"
+          },
+          "issued_at": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 9007199254740991
+          },
+          "expires_at": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 9007199254740991
+          },
+          "policy_version": {
+            "type": "string",
+            "pattern": "^[a-zA-Z0-9][a-zA-Z0-9:._-]{0,127}$"
+          },
+          "policy_commitment": {
+            "type": "string"
+          },
+          "proof_program": {
+            "type": "string"
+          }
+        }
+      },
+      "Revocation": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "org_id",
+          "target_kind",
+          "target_id",
+          "issued_at"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[a-zA-Z0-9][a-zA-Z0-9:._-]{0,127}$"
+          },
+          "org_id": {
+            "type": "string",
+            "pattern": "^[a-zA-Z0-9][a-zA-Z0-9:._-]{0,127}$"
+          },
+          "target_kind": {
+            "type": "string",
+            "enum": [
+              "organization",
+              "root_key",
+              "agent",
+              "runtime_key",
+              "delegation",
+              "policy_key",
+              "policy"
+            ]
+          },
+          "target_id": {
+            "type": "string",
+            "pattern": "^[a-zA-Z0-9][a-zA-Z0-9:._-]{0,127}$"
+          },
+          "issued_at": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 9007199254740991
+          }
+        }
+      },
+      "Rotation": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "org_id",
+          "previous_key_id",
+          "public_key",
+          "issued_at"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[a-zA-Z0-9][a-zA-Z0-9:._-]{0,127}$"
+          },
+          "org_id": {
+            "type": "string",
+            "pattern": "^[a-zA-Z0-9][a-zA-Z0-9:._-]{0,127}$"
+          },
+          "previous_key_id": {
+            "type": "string",
+            "pattern": "^[a-zA-Z0-9][a-zA-Z0-9:._-]{0,127}$"
+          },
+          "public_key": {
+            "type": "string"
+          },
+          "issued_at": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 9007199254740991
+          }
+        }
+      },
+      "Receipt": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "receipt_type",
+          "org_id",
+          "decision",
+          "code",
+          "request_id",
+          "capability_id",
+          "verifier",
+          "issued_at",
+          "policy_version",
+          "request_digest",
+          "evidence_digest",
+          "trace"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[a-zA-Z0-9][a-zA-Z0-9:._-]{0,127}$"
+          },
+          "receipt_type": {
+            "type": "string",
+            "enum": [
+              "authorization",
+              "execution",
+              "denial"
+            ]
+          },
+          "org_id": {
+            "type": "string",
+            "pattern": "^[a-zA-Z0-9][a-zA-Z0-9:._-]{0,127}$"
+          },
+          "decision": {
+            "type": "string"
+          },
+          "code": {
+            "type": "string"
+          },
+          "request_id": {
+            "type": "string",
+            "pattern": "^[a-zA-Z0-9][a-zA-Z0-9:._-]{0,127}$"
+          },
+          "capability_id": {
+            "type": "string",
+            "pattern": "^[a-zA-Z0-9][a-zA-Z0-9:._-]{0,127}$"
+          },
+          "verifier": {
+            "type": "string",
+            "pattern": "^[a-zA-Z0-9][a-zA-Z0-9:._-]{0,127}$"
+          },
+          "issued_at": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 9007199254740991
+          },
+          "policy_version": {
+            "type": "string",
+            "pattern": "^[a-zA-Z0-9][a-zA-Z0-9:._-]{0,127}$"
+          },
+          "request_digest": {
+            "type": "string"
+          },
+          "evidence_digest": {
+            "type": "string"
+          },
+          "trace": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "Proof": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "program",
+          "proof"
+        ],
+        "properties": {
+          "program": {
+            "type": "string",
+            "const": "passport.hidden-limit.bp5.ristretto.32x2.v1"
+          },
+          "proof": {
+            "type": "string",
+            "pattern": "^[a-f0-9]+$",
+            "maxLength": 8192
+          }
+        }
+      },
+      "SignedDocument": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "profile",
+          "kind",
+          "key_id",
+          "payload",
+          "signature"
+        ],
+        "properties": {
+          "profile": {
+            "type": "string",
+            "const": "passport.v0.ed25519-jcs"
+          },
+          "kind": {
+            "type": "string",
+            "pattern": "^[a-zA-Z0-9][a-zA-Z0-9:._-]{0,127}$"
+          },
+          "key_id": {
+            "type": "string",
+            "pattern": "^[a-zA-Z0-9][a-zA-Z0-9:._-]{0,127}$"
+          },
+          "payload": {
+            "type": "object",
+            "additionalProperties": true
+          },
+          "signature": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9_-]{86}$"
+          }
+        }
+      },
+      "Verification": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "decision",
+          "code",
+          "request_digest",
+          "evidence_digest",
+          "policy_version",
+          "state_issued_at",
+          "valid_until",
+          "trace"
+        ],
+        "properties": {
+          "decision": {
+            "type": "string",
+            "enum": [
+              "allow",
+              "deny"
+            ]
+          },
+          "code": {
+            "type": "string"
+          },
+          "request_digest": {
+            "type": "string"
+          },
+          "evidence_digest": {
+            "type": "string"
+          },
+          "policy_version": {
+            "type": "string"
+          },
+          "state_issued_at": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 9007199254740991
+          },
+          "valid_until": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 9007199254740991
+          },
+          "trace": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "Challenge": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "nonce",
+          "audience",
+          "action",
+          "resource",
+          "issued_at",
+          "expires_at"
+        ],
+        "properties": {
+          "nonce": {
+            "type": "string"
+          },
+          "audience": {
+            "type": "string",
+            "pattern": "^[a-zA-Z0-9][a-zA-Z0-9:._-]{0,127}$"
+          },
+          "action": {
+            "type": "string",
+            "pattern": "^[a-zA-Z0-9][a-zA-Z0-9:._-]{0,127}$"
+          },
+          "resource": {
+            "type": "string",
+            "pattern": "^[a-zA-Z0-9][a-zA-Z0-9:._-]{0,127}$"
+          },
+          "issued_at": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 9007199254740991
+          },
+          "expires_at": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 9007199254740991
+          }
+        }
+      },
+      "Empty": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [],
+        "properties": {}
+      },
+      "SignedOrganization": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "profile",
+          "kind",
+          "key_id",
+          "payload",
+          "signature"
+        ],
+        "properties": {
+          "profile": {
+            "type": "string",
+            "const": "passport.v0.ed25519-jcs"
+          },
+          "kind": {
+            "type": "string",
+            "const": "organization"
+          },
+          "key_id": {
+            "type": "string",
+            "pattern": "^[a-zA-Z0-9][a-zA-Z0-9:._-]{0,127}$"
+          },
+          "payload": {
+            "$ref": "#/components/schemas/Organization"
+          },
+          "signature": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9_-]{86}$"
+          }
+        }
+      },
+      "SignedAgent": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "profile",
+          "kind",
+          "key_id",
+          "payload",
+          "signature"
+        ],
+        "properties": {
+          "profile": {
+            "type": "string",
+            "const": "passport.v0.ed25519-jcs"
+          },
+          "kind": {
+            "type": "string",
+            "const": "agent"
+          },
+          "key_id": {
+            "type": "string",
+            "pattern": "^[a-zA-Z0-9][a-zA-Z0-9:._-]{0,127}$"
+          },
+          "payload": {
+            "$ref": "#/components/schemas/Agent"
+          },
+          "signature": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9_-]{86}$"
+          }
+        }
+      },
+      "SignedRuntimeKey": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "profile",
+          "kind",
+          "key_id",
+          "payload",
+          "signature"
+        ],
+        "properties": {
+          "profile": {
+            "type": "string",
+            "const": "passport.v0.ed25519-jcs"
+          },
+          "kind": {
+            "type": "string",
+            "const": "runtime_key"
+          },
+          "key_id": {
+            "type": "string",
+            "pattern": "^[a-zA-Z0-9][a-zA-Z0-9:._-]{0,127}$"
+          },
+          "payload": {
+            "$ref": "#/components/schemas/RuntimeKey"
+          },
+          "signature": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9_-]{86}$"
+          }
+        }
+      },
+      "SignedDelegation": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "profile",
+          "kind",
+          "key_id",
+          "payload",
+          "signature"
+        ],
+        "properties": {
+          "profile": {
+            "type": "string",
+            "const": "passport.v0.ed25519-jcs"
+          },
+          "kind": {
+            "type": "string",
+            "const": "delegation"
+          },
+          "key_id": {
+            "type": "string",
+            "pattern": "^[a-zA-Z0-9][a-zA-Z0-9:._-]{0,127}$"
+          },
+          "payload": {
+            "$ref": "#/components/schemas/Delegation"
+          },
+          "signature": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9_-]{86}$"
+          }
+        }
+      },
+      "SignedPolicyKey": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "profile",
+          "kind",
+          "key_id",
+          "payload",
+          "signature"
+        ],
+        "properties": {
+          "profile": {
+            "type": "string",
+            "const": "passport.v0.ed25519-jcs"
+          },
+          "kind": {
+            "type": "string",
+            "const": "policy_key"
+          },
+          "key_id": {
+            "type": "string",
+            "pattern": "^[a-zA-Z0-9][a-zA-Z0-9:._-]{0,127}$"
+          },
+          "payload": {
+            "$ref": "#/components/schemas/PolicyKey"
+          },
+          "signature": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9_-]{86}$"
+          }
+        }
+      },
+      "SignedPolicy": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "profile",
+          "kind",
+          "key_id",
+          "payload",
+          "signature"
+        ],
+        "properties": {
+          "profile": {
+            "type": "string",
+            "const": "passport.v0.ed25519-jcs"
+          },
+          "kind": {
+            "type": "string",
+            "const": "policy"
+          },
+          "key_id": {
+            "type": "string",
+            "pattern": "^[a-zA-Z0-9][a-zA-Z0-9:._-]{0,127}$"
+          },
+          "payload": {
+            "$ref": "#/components/schemas/Policy"
+          },
+          "signature": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9_-]{86}$"
+          }
+        }
+      },
+      "SignedRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "profile",
+          "kind",
+          "key_id",
+          "payload",
+          "signature"
+        ],
+        "properties": {
+          "profile": {
+            "type": "string",
+            "const": "passport.v0.ed25519-jcs"
+          },
+          "kind": {
+            "type": "string",
+            "const": "request"
+          },
+          "key_id": {
+            "type": "string",
+            "pattern": "^[a-zA-Z0-9][a-zA-Z0-9:._-]{0,127}$"
+          },
+          "payload": {
+            "$ref": "#/components/schemas/Request"
+          },
+          "signature": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9_-]{86}$"
+          }
+        }
+      },
+      "SignedCapability": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "profile",
+          "kind",
+          "key_id",
+          "payload",
+          "signature"
+        ],
+        "properties": {
+          "profile": {
+            "type": "string",
+            "const": "passport.v0.ed25519-jcs"
+          },
+          "kind": {
+            "type": "string",
+            "const": "capability"
+          },
+          "key_id": {
+            "type": "string",
+            "pattern": "^[a-zA-Z0-9][a-zA-Z0-9:._-]{0,127}$"
+          },
+          "payload": {
+            "$ref": "#/components/schemas/Capability"
+          },
+          "signature": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9_-]{86}$"
+          }
+        }
+      },
+      "SignedRevocation": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "profile",
+          "kind",
+          "key_id",
+          "payload",
+          "signature"
+        ],
+        "properties": {
+          "profile": {
+            "type": "string",
+            "const": "passport.v0.ed25519-jcs"
+          },
+          "kind": {
+            "type": "string",
+            "const": "revocation"
+          },
+          "key_id": {
+            "type": "string",
+            "pattern": "^[a-zA-Z0-9][a-zA-Z0-9:._-]{0,127}$"
+          },
+          "payload": {
+            "$ref": "#/components/schemas/Revocation"
+          },
+          "signature": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9_-]{86}$"
+          }
+        }
+      },
+      "SignedRotation": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "profile",
+          "kind",
+          "key_id",
+          "payload",
+          "signature"
+        ],
+        "properties": {
+          "profile": {
+            "type": "string",
+            "const": "passport.v0.ed25519-jcs"
+          },
+          "kind": {
+            "type": "string",
+            "const": "root_rotation"
+          },
+          "key_id": {
+            "type": "string",
+            "pattern": "^[a-zA-Z0-9][a-zA-Z0-9:._-]{0,127}$"
+          },
+          "payload": {
+            "$ref": "#/components/schemas/Rotation"
+          },
+          "signature": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9_-]{86}$"
+          }
+        }
+      },
+      "SignedReceipt": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "profile",
+          "kind",
+          "key_id",
+          "payload",
+          "signature"
+        ],
+        "properties": {
+          "profile": {
+            "type": "string",
+            "const": "passport.v0.ed25519-jcs"
+          },
+          "kind": {
+            "type": "string",
+            "const": "receipt"
+          },
+          "key_id": {
+            "type": "string",
+            "pattern": "^[a-zA-Z0-9][a-zA-Z0-9:._-]{0,127}$"
+          },
+          "payload": {
+            "$ref": "#/components/schemas/Receipt"
+          },
+          "signature": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9_-]{86}$"
+          }
+        }
+      },
+      "TrustBundle": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "org_id",
+          "challenge",
+          "issued_at",
+          "expires_at",
+          "active_policy",
+          "roots",
+          "records"
+        ],
+        "properties": {
+          "org_id": {
+            "type": "string",
+            "pattern": "^[a-zA-Z0-9][a-zA-Z0-9:._-]{0,127}$"
+          },
+          "challenge": {
+            "type": "string"
+          },
+          "issued_at": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 9007199254740991
+          },
+          "expires_at": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 9007199254740991
+          },
+          "active_policy": {
+            "type": "string"
+          },
+          "roots": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "key_id",
+                "public_key",
+                "revoked"
+              ],
+              "properties": {
+                "key_id": {
+                  "type": "string",
+                  "pattern": "^[a-zA-Z0-9][a-zA-Z0-9:._-]{0,127}$"
+                },
+                "public_key": {
+                  "type": "string"
+                },
+                "revoked": {
+                  "type": "boolean"
+                }
+              }
+            }
+          },
+          "records": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "document",
+                "revoked"
+              ],
+              "properties": {
+                "document": {
+                  "$ref": "#/components/schemas/SignedDocument"
+                },
+                "revoked": {
+                  "type": "boolean"
+                }
+              }
+            }
+          }
+        }
+      },
+      "SignedTrustBundle": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "profile",
+          "kind",
+          "key_id",
+          "payload",
+          "signature"
+        ],
+        "properties": {
+          "profile": {
+            "type": "string",
+            "const": "passport.v0.ed25519-jcs"
+          },
+          "kind": {
+            "type": "string",
+            "const": "trust_bundle"
+          },
+          "key_id": {
+            "type": "string",
+            "pattern": "^[a-zA-Z0-9][a-zA-Z0-9:._-]{0,127}$"
+          },
+          "payload": {
+            "$ref": "#/components/schemas/TrustBundle"
+          },
+          "signature": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9_-]{86}$"
+          }
+        }
+      },
+      "Evidence": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "request",
+          "delegation",
+          "capability"
+        ],
+        "properties": {
+          "request": {
+            "$ref": "#/components/schemas/SignedRequest"
+          },
+          "delegation": {
+            "$ref": "#/components/schemas/SignedDelegation"
+          },
+          "capability": {
+            "$ref": "#/components/schemas/SignedCapability"
+          },
+          "proof": {
+            "$ref": "#/components/schemas/Proof"
+          }
+        }
+      },
+      "AuthorizationInput": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "request",
+          "delegation"
+        ],
+        "properties": {
+          "request": {
+            "$ref": "#/components/schemas/SignedRequest"
+          },
+          "delegation": {
+            "$ref": "#/components/schemas/SignedDelegation"
+          }
+        }
+      },
+      "AuthorizationResult": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "capability",
+          "authorization_receipt"
+        ],
+        "properties": {
+          "capability": {
+            "$ref": "#/components/schemas/SignedCapability"
+          },
+          "proof": {
+            "$ref": "#/components/schemas/Proof"
+          },
+          "authorization_receipt": {
+            "$ref": "#/components/schemas/SignedReceipt"
+          }
+        }
+      },
+      "PurchaseResult": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "decision",
+          "execution_id",
+          "receipt",
+          "resource"
+        ],
+        "properties": {
+          "decision": {
+            "type": "string",
+            "const": "allow"
+          },
+          "execution_id": {
+            "type": "string",
+            "pattern": "^[a-zA-Z0-9][a-zA-Z0-9:._-]{0,127}$"
+          },
+          "receipt": {
+            "$ref": "#/components/schemas/SignedReceipt"
+          },
+          "resource": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "title",
+              "content",
+              "simulated"
+            ],
+            "properties": {
+              "title": {
+                "type": "string"
+              },
+              "content": {
+                "type": "string"
+              },
+              "simulated": {
+                "const": true,
+                "type": "boolean"
+              }
+            }
+          }
+        }
+      },
+      "Overview": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "organizations",
+          "records",
+          "profile",
+          "freshness_seconds"
+        ],
+        "properties": {
+          "organizations": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "id",
+                "active_policy"
+              ],
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "pattern": "^[a-zA-Z0-9][a-zA-Z0-9:._-]{0,127}$"
+                },
+                "active_policy": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "records": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "org_id",
+                "kind",
+                "id",
+                "revoked",
+                "document"
+              ],
+              "properties": {
+                "org_id": {
+                  "type": "string",
+                  "pattern": "^[a-zA-Z0-9][a-zA-Z0-9:._-]{0,127}$"
+                },
+                "kind": {
+                  "type": "string",
+                  "pattern": "^[a-zA-Z0-9][a-zA-Z0-9:._-]{0,127}$"
+                },
+                "id": {
+                  "type": "string",
+                  "pattern": "^[a-zA-Z0-9][a-zA-Z0-9:._-]{0,127}$"
+                },
+                "revoked": {
+                  "type": "boolean"
+                },
+                "document": {
+                  "$ref": "#/components/schemas/SignedDocument"
+                }
+              }
+            }
+          },
+          "profile": {
+            "type": "string"
+          },
+          "freshness_seconds": {
+            "type": "integer"
+          }
+        }
+      },
+      "Identity": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "verified",
+          "agent_id",
+          "runtime_key_id",
+          "checked_at"
+        ],
+        "properties": {
+          "verified": {
+            "type": "boolean"
+          },
+          "agent_id": {
+            "type": "string",
+            "pattern": "^[a-zA-Z0-9][a-zA-Z0-9:._-]{0,127}$"
+          },
+          "runtime_key_id": {
+            "type": "string",
+            "pattern": "^[a-zA-Z0-9][a-zA-Z0-9:._-]{0,127}$"
+          },
+          "checked_at": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 9007199254740991
+          }
+        }
+      },
+      "Event": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "topic",
+          "object_id",
+          "evidence_digest"
+        ],
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "topic": {
+            "type": "string"
+          },
+          "object_id": {
+            "type": "string",
+            "pattern": "^[a-zA-Z0-9][a-zA-Z0-9:._-]{0,127}$"
+          },
+          "evidence_digest": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  }
+}

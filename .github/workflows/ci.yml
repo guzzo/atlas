@@ -1,0 +1,41 @@
+name: Passport acceptance
+on: [push, pull_request]
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.27.x'
+          cache: true
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: '1.98.0'
+          components: rustfmt
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: workers/policy-proof
+      - run: npm ci
+      - run: npm run generate && git diff --exit-code -- api/openapi.json sdk/generated.ts
+      - run: make check test
+      - run: make demo
+      - run: ./bin/passport benchmark
+      - run: node --import tsx scripts/mcp-smoke.ts
+      - run: bash tests/outage.sh
+      - run: npx playwright install --with-deps chromium
+      - run: node --import tsx scripts/ui-smoke.ts
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: passport-acceptance
+          path: .local/reports/
+      - if: always()
+        run: docker compose down
