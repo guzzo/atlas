@@ -15,6 +15,7 @@ make demo
 This generates local development keys and administrator credentials, builds the containers, migrates PostgreSQL, registers Acme and Globex, enrolls `codex-local`, and runs positive and adversarial scenarios. Re-running it preserves the database, keys and receipts. Demo agents have fresh IDs; the policy-update scenario advances Acme's active policy and invalidates previously issued capabilities.
 
 - Dashboard: **http://127.0.0.1:8080**
+- Get Started: **http://127.0.0.1:8080/get-started/** — a short introduction, interactive trust diagram, and copyable Codex setup instructions. Overview remains the default page.
 - Globex resource API: `http://127.0.0.1:8081`
 - Acme authority: `http://127.0.0.1:8082`
 - Independent Go verifier: `http://127.0.0.1:8083`

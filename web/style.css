@@ -630,6 +630,7 @@ code {
     align-items: center;
     justify-content: space-between;
     border-bottom: 1px solid var(--line);
+    flex-wrap: wrap;
   }
   .workspace {
     margin: 0;
@@ -637,11 +638,23 @@ code {
     padding: 0;
   }
   .workspace-icon,
-  nav,
   .aside-bottom,
   .workspace > .dot,
   .version {
     display: none;
+  }
+  aside nav {
+    display: flex;
+    flex-basis: 100%;
+    overflow-x: auto;
+    margin-top: 18px;
+    gap: 4px;
+    padding: 4px;
+  }
+  aside nav a {
+    flex-shrink: 0;
+    padding: 10px 12px;
+    white-space: nowrap;
   }
   main {
     margin: 0;

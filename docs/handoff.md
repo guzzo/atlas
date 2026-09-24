@@ -16,6 +16,8 @@ make demo
 
 The dashboard is at **http://127.0.0.1:8080**. The connection command prints the exact Codex registration command for this checkout. Run it, restart the Codex session, and use `/mcp`. Ask the agent to verify its identity and a 1200-cent purchase; ask explicitly to execute if an execution receipt is wanted. No OpenAI API key is required by Passport.
 
+The **Get Started** page at `/get-started/` introduces the trust problem, illustrates the Acme → Globex request flow, and provides copyable setup commands and a verification prompt. Overview remains the default at `/`. Navigation works on desktop and mobile. Its passport illustration is explicitly an example; the page does not fetch activity or perform transactions. The optional private proof is described only as hiding the per-transaction spending limit. Page assets live in `web/get-started/` and use the existing static file server and Compose web mount.
+
 **No machine configuration intervention is currently needed.** Docker/Compose, Node/npm, Go and Rust were available and used. npm/Go/Cargo dependencies, Docker images and the Playwright Chromium browser were downloaded successfully. The seven platform services were left running and healthy. The Codex tool connection itself was exercised through an MCP protocol client; no live model session was launched and no user-wide Codex configuration was silently changed.
 
 ## Delivered against the north star
@@ -42,6 +44,7 @@ The purchase is a static simulated report. No money, wallet, escrow, x402 exchan
 - The actual MCP stdio client discovered all four tools and successfully called `passport_identity` and `passport_verify` with a proof.
 - Stopping the registry made Globex reject with `unavailable`; the outage script restored the service.
 - A browser check passed for desktop/mobile live data, receipt expansion, filtering, lack of horizontal page overflow and browser errors. Screenshots are in `.local/reports`.
+- Get Started browser checks passed at ten widths from 320 to 1920 pixels, including desktop/mobile navigation, interactive diagram steps, keyboard activation, clipboard success/fallback, direct links/reload and reduced motion. The existing Overview smoke check also passed after the navigation update. Screenshots: `.local/reports/get-started-desktop.png` and `get-started-mobile.png`.
 - The proof benchmark produced **672-byte proofs**; initial median generation **7.68 ms**, verification **2.93 ms**, including local HTTP round trips. See [the benchmark discussion](proof-experiment.md).
 - Rebuild/restart and repeated bootstrap/demo runs preserved existing installation state.
 - A fresh isolated checkout with independently generated keys and an empty database also passed the single-command `make demo` flow and all 32 acceptance cases.
